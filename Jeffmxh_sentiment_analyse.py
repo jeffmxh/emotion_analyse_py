@@ -160,17 +160,17 @@ class polar_classifier():
 
 def main(path_to_data, column_to_deal, output_file):
     data = pd.read_excel(path_to_data)
-    print('-----------------------------Data loaded!-----------------------------')
+    print('---------------------------------Data loaded!-----------------------------------')
     re_sub_vec = np.vectorize(re_sub) # 函数向量化
     data[column_to_deal] = re_sub_vec(data[column_to_deal])
     print('-----------------------------Useless words trimmed!-----------------------------')
     data['content_list'] = data[column_to_deal].map(sentence_split)
     seg_word = jieba4null()
     data.loc[:,'seg_words'] = data['content_list'].map(seg_word.cut_sentence)
-    print('-----------------------------Words segmentation finished!-----------------------------')
+    print('--------------------------Words segmentation finished!--------------------------')
     worker = polar_classifier()
     data['polar'] = data['seg_words'].map(worker.multi_list_classify)
-    print('-----------------------------Start writing to excel!-----------------------------')
+    print('----------------------------Start writing to excel!-----------------------------')
     writer = pd.ExcelWriter(output_file)
     data.to_excel(writer, sheet_name='sheet1', encoding='utf-8', index=False)
     writer.save()
