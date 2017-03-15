@@ -10,7 +10,7 @@ import numpy as np
 import argparse
 import logging
 import re
-import jieba 
+import jieba
 import os
 from os import path
 
@@ -98,7 +98,7 @@ class polar_classifier():
             res = [line.encode('utf-8', 'ignore').decode('utf-8', 'ignore') for line in f_h]
             result = [re.sub('\n', '', item) for item in res]
             return result
-        
+
     # 鉴定词汇的情感极性，输入词汇以及正负列表
 
     def word_polar_classify(self, word, pos_list, neg_list):
@@ -110,7 +110,7 @@ class polar_classifier():
             return 0
 
     # 鉴定程度副词，degree:1~6
-    
+
     def word_strength_classify(self, word, degree_dict):
         sub_dict = degree_dict.loc[degree_dict.word==word,:]
         if sub_dict.shape[0]==0:
@@ -125,9 +125,9 @@ class polar_classifier():
             return -1
         else:
             return 1
-        
+
     # 分析单个列表词汇
-    
+
     def single_list_classify(self, seg_list):
         sign = 1
         k = 1
@@ -144,9 +144,9 @@ class polar_classifier():
             return 'None'
         else:
             return sum(result_list)
-        
+
     # 分析多个列表词汇
-    
+
     def multi_list_classify(self, big_seg_list):
         res = []
         for seg_list in big_seg_list:
@@ -185,5 +185,11 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--column', dest='column', nargs='?', default='content',
                         help='Specify the column name of doc content. Default is "content".')
     args = parser.parse_args()
-    print('输入文件：' + str(args.input_path) + '\n输出文件：' + str(args.output_path) + '\n处理的列：' + str(args.column))
-    main(path_to_data = args.input_path, column_to_deal = args.column, output_file = args.output_path)
+    current_path = os.getcwd()
+    inpath = path.join(current_path, 'raw_data', args.input_path)
+    done_path = path.join(current_path, 'raw_data', 'output')
+    if not path.isdir(done_path):
+        os.mkdir(done_path)
+    outpath = path.join(done_path, args.output_path)
+    print('输入文件：' + str(inpath) + '\n输出文件：' + str(outpath) + '\n处理的列：' + str(args.column))
+    main(path_to_data = inpath, column_to_deal = args.column, output_file = outpath)
