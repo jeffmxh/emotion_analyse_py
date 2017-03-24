@@ -58,9 +58,9 @@ class jieba4null():
     """
     def __init__(self,n_core = 16):
         self.rootdir = os.getcwd()
-        self.STOP_WORDS_LIST = self.load_txt(path.join(self.rootdir, 'stopwords_utf8.txt'))
+        self.STOP_WORDS_LIST = self.load_txt(path.join(self.rootdir, 'resources', 'stopwords_utf8.txt'))
         self.STOP_WORDS_LIST = set([re.sub('\n', '', item) for item in self.STOP_WORDS_LIST])
-        jieba.load_userdict(path.join(self.rootdir, 'emotion_user_dict.txt'))
+        jieba.load_userdict(path.join(self.rootdir, 'resources', 'emotion_user_dict.txt'))
         self.n_CORE=n_core
         jieba.enable_parallel(self.n_CORE-1)
     def filter_stop(self,input_text):
@@ -89,9 +89,9 @@ class polar_classifier():
     '''
     def __init__(self):
         self.rootdir = os.getcwd()
-        self.pos_list = self.load_txt(path.join(self.rootdir, 'full_pos_dict_sougou.txt'))
-        self.neg_list = self.load_txt(path.join(self.rootdir, 'full_neg_dict_sougou.txt'))
-        self.degree_dict = pd.read_excel(path.join(self.rootdir, 'degree_dict.xlsx'))
+        self.pos_list = self.load_txt(path.join(self.rootdir, 'resources', 'full_pos_dict_sougou.txt'))
+        self.neg_list = self.load_txt(path.join(self.rootdir, 'resources', 'full_neg_dict_sougou.txt'))
+        self.degree_dict = pd.read_excel(path.join(self.rootdir, 'resources', 'degree_dict.xlsx'))
         self.deny_dict = ['不', '不是', '没有']
     def load_txt(self,file):
         with open(file,'r',encoding = 'utf-8') as f_h:
@@ -169,7 +169,8 @@ def main(path_to_data, column_to_deal, output_file):
     data.loc[:,'seg_words'] = data['content_list'].map(seg_word.cut_sentence)
     print('--------------------------Words segmentation finished!--------------------------')
     worker = polar_classifier()
-    data['polar'] = data['seg_words'].map(worker.multi_list_classify)
+    data['sentiment'] = data['seg_words'].map(worker.multi_list_classify)
+    data = data.drop(['content_list','seg_words'], axis = 1)
     print('----------------------------Start writing to excel!-----------------------------')
     writer = pd.ExcelWriter(output_file)
     data.to_excel(writer, sheet_name='sheet1', encoding='utf-8', index=False)
@@ -180,8 +181,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='情感极性分析脚本说明')
     parser.add_argument('-i', '--inpath', dest='input_path', nargs='?', default='',
                         help='Path to the input excel file.')
-    parser.add_argument('-o', '--outpath', dest='output_path', nargs='?', default='emotion_result.xlsx',
-                        help='Path to the output excel file.')
     parser.add_argument('-c', '--column', dest='column', nargs='?', default='content',
                         help='Specify the column name of doc content. Default is "content".')
     args = parser.parse_args()
@@ -190,6 +189,8 @@ if __name__ == '__main__':
     done_path = path.join(current_path, 'raw_data', 'output')
     if not path.isdir(done_path):
         os.mkdir(done_path)
-    outpath = path.join(done_path, args.output_path)
+    infile = re.sub('.xlsx', '', args.input_path)
+    outfile = infile + '_emotion_result.xlsx'
+    outpath = path.join(done_path, outfile)
     print('输入文件：' + str(inpath) + '\n输出文件：' + str(outpath) + '\n处理的列：' + str(args.column))
     main(path_to_data = inpath, column_to_deal = args.column, output_file = outpath)
