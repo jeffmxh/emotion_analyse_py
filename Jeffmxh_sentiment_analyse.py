@@ -13,6 +13,7 @@ import re
 import jieba
 import os
 from os import path
+from multiprocessing import Pool
 
 
 '''
@@ -158,31 +159,48 @@ class polar_classifier():
             return sum(senti_list)
 
 
-def main(path_to_data, column_to_deal, output_file):
+def main(path_to_data, column_to_deal, output_file, input_ncores):
+    '''
+    定义logging格式
+    '''
+    logger = logging.getLogger('mylogger')  
+    logger.setLevel(logging.INFO) 
+    console = logging.StreamHandler()  
+    console.setLevel(logging.INFO) 
+    formatter = logging.Formatter('[%(levelname)-3s]%(asctime)s %(filename)s[line:%(lineno)d]:%(message)s')
+    console.setFormatter(formatter)  
+    logger.addHandler(console)  
+
+    '''
+    开始读取数据
+    '''
     data = pd.read_excel(path_to_data)
-    print('---------------------------------Data loaded!-----------------------------------')
+    logger.info("开始文本过滤...")
     re_sub_vec = np.vectorize(re_sub) # 函数向量化
     data[column_to_deal] = re_sub_vec(data[column_to_deal])
-    print('-----------------------------Useless words trimmed!-----------------------------')
+    logger.info("开始进行分词...")
     data['content_list'] = data[column_to_deal].map(sentence_split)
-    seg_word = jieba4null()
+    seg_word = jieba4null(n_core = input_ncores)
     data.loc[:,'seg_words'] = data['content_list'].map(seg_word.cut_sentence)
-    print('--------------------------Words segmentation finished!--------------------------')
+    logger.info("开始进行极性标记...")
+    pool = Pool(input_ncores)
     worker = polar_classifier()
-    data['sentiment'] = data['seg_words'].map(worker.multi_list_classify)
+    data['sentiment'] = pool.map(worker.multi_list_classify, data['seg_words'])
     data = data.drop(['content_list','seg_words'], axis = 1)
-    print('----------------------------Start writing to excel!-----------------------------')
+    logger.info("开始写入结果文件...")
     writer = pd.ExcelWriter(output_file)
     data.to_excel(writer, sheet_name='sheet1', encoding='utf-8', index=False)
     writer.save()
-
+    logger.info("Task done!")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='情感极性分析脚本说明')
     parser.add_argument('-i', '--inpath', dest='input_path', nargs='?', default='',
-                        help='Path to the input excel file.')
+                        help='Name of the input excel file in folder:raw_data.')
     parser.add_argument('-c', '--column', dest='column', nargs='?', default='content',
                         help='Specify the column name of doc content. Default is "content".')
+    parser.add_argument('-n', '--ncores', dest='ncores', nargs='?', default=16, type=int,
+                        help='Cores to use for multiprocessing.')
     args = parser.parse_args()
     current_path = os.getcwd()
     inpath = path.join(current_path, 'raw_data', args.input_path)
@@ -193,4 +211,4 @@ if __name__ == '__main__':
     outfile = infile + '_emotion_result.xlsx'
     outpath = path.join(done_path, outfile)
     print('输入文件：' + str(inpath) + '\n输出文件：' + str(outpath) + '\n处理的列：' + str(args.column))
-    main(path_to_data = inpath, column_to_deal = args.column, output_file = outpath)
+    main(path_to_data = inpath, column_to_deal = args.column, output_file = outpath, input_ncores=args.ncores)
