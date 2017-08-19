@@ -21,4 +21,6 @@ python3 Jeffmxh_sentiment_analyse.py -i 'infile' -c 'column' -n 16
 python3 Jeffmxh_sentiment_analyse.py -h
 ```
 
-致谢：特别感谢[ALEX](https://github.com/alexwwang)以及南京巴兰塔信息科技有限公司在我完成此项目过程中对我的帮助以及技术支持！
+***
+
+**致谢**：特别感谢[ALEX](https://github.com/alexwwang)以及南京巴兰塔信息科技有限公司在我完成此项目过程中对我的帮助以及技术支持！
